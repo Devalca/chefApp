@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1067829313952",
+    "firebase_url": "https://mychef-4606e.firebaseio.com",
+    "project_id": "mychef-4606e",
+    "storage_bucket": "mychef-4606e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1067829313952:android:7fbc05c5702884434ba4c5",
+        "android_client_info": {
+          "package_name": "com.example.myChef"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1067829313952-t34rk4rk83tg1b6pfutg797rjh2ldcof.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.myChef",
+            "certificate_hash": "0a73e262dff2b55cf44edfb856747c18491fee5f"
+          }
+        },
+        {
+          "client_id": "1067829313952-88ug8h0iv9gkq0oasofprq71oebbn46d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBP7tKfqvueP0fzZ2ki3Ms1sKryYRe5Vao"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1067829313952-88ug8h0iv9gkq0oasofprq71oebbn46d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
