@@ -17,6 +17,7 @@ class StateWidget extends StatefulWidget {
   });
 
   static _StateWidgetState of(BuildContext context) {
+    // ignore: deprecated_member_use
     return (context.inheritFromWidgetOfExactType(_StateDataWidget)
             as _StateDataWidget)
         .data;

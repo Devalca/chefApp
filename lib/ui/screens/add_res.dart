@@ -13,21 +13,22 @@ class AddResScreen extends StatefulWidget {
   final String documentId;
   final String nama;
   final String keterangan;
+  final String kategori;
   final String image;
   final String jenis;
   List<dynamic> listLike;
   int countLikes;
 
-  AddResScreen({
-    @required this.isEdit,
-    this.listLike,
-    this.documentId = '',
-    this.nama = '',
-    this.keterangan = '',
-    this.image = '',
-    this.jenis = '',
-    this.countLikes
-  });
+  AddResScreen(
+      {@required this.isEdit,
+      this.listLike,
+      this.kategori = '',
+      this.documentId = '',
+      this.nama = '',
+      this.keterangan = '',
+      this.image = '',
+      this.jenis = '',
+      this.countLikes});
 
   @override
   _AddResScreenState createState() => _AddResScreenState();
@@ -43,8 +44,9 @@ class _AddResScreenState extends State<AddResScreen> {
   final GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
   final Firestore firestore = Firestore.instance;
   final TextEditingController controllernama = TextEditingController();
+  final TextEditingController controllerkategori = TextEditingController();
   final TextEditingController controllerketerangan = TextEditingController();
-  List _listJenis = ["Nasi Goreng", "Seblak"];
+  List _listJenis = ["Indonesian Food", "Chinese Food"];
 
   double widthScreen;
   double heightScreen;
@@ -55,6 +57,7 @@ class _AddResScreenState extends State<AddResScreen> {
     if (widget.isEdit) {
       controllernama.text = widget.nama;
       controllerketerangan.text = widget.keterangan;
+      controllerkategori.text = widget.kategori;
       urlImage = widget.image;
       jenis = widget.jenis;
       likess = widget.listLike;
@@ -112,7 +115,7 @@ class _AddResScreenState extends State<AddResScreen> {
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text("Tambah Resep"),
+          title: Text(widget.isEdit ? 'Update Resep' : 'Tambah Resep'),
         ),
         body: SafeArea(
           child: Stack(
@@ -189,9 +192,9 @@ class _AddResScreenState extends State<AddResScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: <Widget>[
-                              Text("Kategori Resep"),
+                              Text("Jenis Resep"),
                               DropdownButton(
-                                hint: Text("Pilih Kategori"),
+                                hint: Text("Pilih Jenis"),
                                 value: jenis,
                                 items: _listJenis.map((value) {
                                   return DropdownMenuItem(
@@ -207,6 +210,20 @@ class _AddResScreenState extends State<AddResScreen> {
                               ),
                             ],
                           )),
+                      Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            TextField(
+                              controller: controllerkategori,
+                              decoration: InputDecoration(
+                                labelText: 'Kategori',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       Expanded(
                         child: SingleChildScrollView(
                           child: Container(
@@ -229,108 +246,144 @@ class _AddResScreenState extends State<AddResScreen> {
                                     labelText: 'Keterangan',
                                   ),
                                 ),
+                                isLoading
+                                    ? Container(
+                                        color: Colors.white,
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      )
+                                    : Container(
+                                        width: double.infinity,
+                                        color: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16.0, vertical: 8.0),
+                                        child: RaisedButton(
+                                          color: Colors.blue,
+                                          child: Text(widget.isEdit
+                                              ? 'UPDATE RESEP'
+                                              : 'TAMBAH RESEP'),
+                                          textColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(4.0),
+                                          ),
+                                          onPressed: () async {
+                                            uploadPic(context);
+                                            String nama = controllernama.text;
+                                            String keterangan =
+                                                controllerketerangan.text;
+                                            String kategori =
+                                                controllerkategori.text;
+                                            if (nama.isEmpty) {
+                                              scaffoldState.currentState
+                                                  .showSnackBar(SnackBar(
+                                                content: Text(
+                                                    'Nama Resep Dibutuhkan'),
+                                              ));
+                                              return;
+                                            } else if (kategori.isEmpty) {
+                                              scaffoldState.currentState
+                                                  .showSnackBar(SnackBar(
+                                                content: Text(
+                                                    'Kategori Resep Dibutuhkan'),
+                                              ));
+                                              return;
+                                            } else if (keterangan.isEmpty) {
+                                              scaffoldState.currentState
+                                                  .showSnackBar(SnackBar(
+                                                content: Text(
+                                                    'Keterangan Dibutuhkan'),
+                                              ));
+                                              return;
+                                            } else if (urlImage == null) {
+                                              scaffoldState.currentState
+                                                  .showSnackBar(SnackBar(
+                                                content: Text(
+                                                    'Klik Tombol Upload Terlebih Dahulu'),
+                                              ));
+                                              return;
+                                            } else if (jenis == null) {
+                                              scaffoldState.currentState
+                                                  .showSnackBar(SnackBar(
+                                                content: Text(
+                                                    'Pilih Kategori Resep Terlebih Dahulu'),
+                                              ));
+                                              return;
+                                            }
+                                            setState(() => isLoading = true);
+                                            if (widget.isEdit) {
+                                              CollectionReference kat =
+                                                  firestore
+                                                      .collection('kategori');
+                                              Map<String, dynamic> postData = {
+                                                'kategori': kategori
+                                              };
+                                              DocumentReference documentTask =
+                                                  firestore.document(
+                                                      'resep/${widget.documentId}');
+                                              firestore.runTransaction(
+                                                  (transaction) async {
+                                                DocumentSnapshot task =
+                                                    await transaction
+                                                        .get(documentTask);
+                                                if (task.exists) {
+                                                  await transaction.update(
+                                                    documentTask,
+                                                    <String, dynamic>{
+                                                      'userId': userId,
+                                                      'nama': nama,
+                                                      'jenis': jenis,
+                                                      'kategori': kategori,
+                                                      'keterangan': keterangan,
+                                                      'image': urlImage,
+                                                      'likes': likess
+                                                    },
+                                                  );
+                                                  await kat
+                                                      .document(kategori)
+                                                      .setData(postData);
+                                                  Navigator.pop(context, true);
+                                                }
+                                              });
+                                            } else {
+                                              CollectionReference kat =
+                                                  firestore
+                                                      .collection('kategori');
+                                              CollectionReference resep =
+                                                  firestore.collection('resep');
+                                              Map<String, dynamic> postData = {
+                                                'kategori': kategori
+                                              };
+                                              DocumentReference result =
+                                                  await resep
+                                                      .add(<String, dynamic>{
+                                                'userId': userId,
+                                                'nama': nama,
+                                                'jenis': jenis,
+                                                'kategori': kategori,
+                                                'keterangan': keterangan,
+                                                'image': urlImage,
+                                                'likes': [userId],
+                                                'countLikes': 1
+                                              });
+                                              await kat
+                                                  .document(kategori)
+                                                  .setData(postData);
+                                              if (result.documentID != null) {
+                                                Navigator.pop(context, true);
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      ),
                               ],
                             ),
                           ),
                         ),
                       ),
                       SizedBox(height: 12.0),
-                      isLoading
-                          ? Container(
-                              color: Colors.white,
-                              padding: const EdgeInsets.all(16.0),
-                              child: Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            )
-                          : Container(
-                              width: double.infinity,
-                              color: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0, vertical: 8.0),
-                              child: RaisedButton(
-                                color: Colors.blue,
-                                child: Text(widget.isEdit
-                                    ? 'UPDATE RESEP'
-                                    : 'TAMBAH RESEP'),
-                                textColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4.0),
-                                ),
-                                onPressed: () async {
-                                  uploadPic(context);
-                                  String nama = controllernama.text;
-                                  String keterangan = controllerketerangan.text;
-                                  if (nama.isEmpty) {
-                                    scaffoldState.currentState
-                                        .showSnackBar(SnackBar(
-                                      content: Text('Nama Resep Dibutuhkan'),
-                                    ));
-                                    return;
-                                  } else if (keterangan.isEmpty) {
-                                    scaffoldState.currentState
-                                        .showSnackBar(SnackBar(
-                                      content: Text('Keterangan Dibutuhkan'),
-                                    ));
-                                    return;
-                                  } else if (urlImage == null) {
-                                    scaffoldState.currentState
-                                        .showSnackBar(SnackBar(
-                                      content: Text(
-                                          'Klik Tombol Upload Terlebih Dahulu'),
-                                    ));
-                                    return;
-                                  } else if (jenis == null) {
-                                    scaffoldState.currentState
-                                        .showSnackBar(SnackBar(
-                                      content: Text(
-                                          'Pilih Kategori Resep Terlebih Dahulu'),
-                                    ));
-                                    return;
-                                  }
-                                  setState(() => isLoading = true);
-                                  if (widget.isEdit) {
-                                    DocumentReference documentTask = firestore
-                                        .document('resep/${widget.documentId}');
-                                    firestore
-                                        .runTransaction((transaction) async {
-                                      DocumentSnapshot task =
-                                          await transaction.get(documentTask);
-                                      if (task.exists) {
-                                        await transaction.update(
-                                          documentTask,
-                                          <String, dynamic>{
-                                            'userId': userId,
-                                            'nama': nama,
-                                            'jenis': jenis,
-                                            'keterangan': keterangan,
-                                            'image': urlImage,
-                                            'likes': likess
-                                          },
-                                        );
-                                        Navigator.pop(context, true);
-                                      }
-                                    });
-                                  } else {
-                                    CollectionReference resep =
-                                        firestore.collection('resep');
-                                    DocumentReference result =
-                                        await resep.add(<String, dynamic>{
-                                      'userId': userId,
-                                      'nama': nama,
-                                      'jenis': jenis,
-                                      'keterangan': keterangan,
-                                      'image': urlImage,
-                                      'likes': [userId],
-                                      'countLikes': 1
-                                    });
-                                    if (result.documentID != null) {
-                                      Navigator.pop(context, true);
-                                    }
-                                  }
-                                },
-                              ),
-                            ),
                     ],
                   ),
                 ),

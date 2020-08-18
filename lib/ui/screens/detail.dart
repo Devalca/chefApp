@@ -6,9 +6,10 @@ class DetailScreen extends StatefulWidget {
   final String keterangan;
   final String image;
   final String jenis;
+  final String kategori;
 
   DetailScreen(
-      {this.documentId, this.nama, this.keterangan, this.image, this.jenis});
+      {this.documentId, this.nama, this.keterangan, this.image, this.jenis, this.kategori});
   @override
   _DetailScreenState createState() => _DetailScreenState();
 }
@@ -39,13 +40,22 @@ class _DetailScreenState extends State<DetailScreen> {
               Row(
                 children: <Widget>[Text("Nama Resep : "), Text(widget.nama)],
               ),
+                SizedBox(
+                height: 16,
+              ),
+              Row(
+                children: <Widget>[
+                  Text("Jenis Resep : "),
+                  Text(widget.jenis)
+                ],
+              ),
               SizedBox(
                 height: 16,
               ),
               Row(
                 children: <Widget>[
                   Text("Kategori Resep : "),
-                  Text(widget.jenis)
+                  Text(widget.kategori)
                 ],
               ),
               SizedBox(

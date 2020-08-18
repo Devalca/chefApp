@@ -14,6 +14,7 @@ class _AddHomeScreenState extends State<AddHomeScreen> {
   final GlobalKey<ScaffoldState> scaffoldState = GlobalKey<ScaffoldState>();
   final Firestore firestore = Firestore.instance;
   String filter;
+  String filJe;
 
   @override
   Widget build(BuildContext context) {
@@ -39,9 +40,17 @@ class _AddHomeScreenState extends State<AddHomeScreen> {
       final userId = appState?.firebaseUserAuth?.uid ?? '';
 
       return Scaffold(
-        appBar: AppBar(
-          title: Text("Semua Resep"),
-        ),
+        appBar: AppBar(title: Text("Semua Resep"), actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                filter = null;
+                filJe = null;
+              });
+            },
+          ),
+        ]),
         key: scaffoldState,
         backgroundColor: Colors.white,
         body: SafeArea(
@@ -53,76 +62,113 @@ class _AddHomeScreenState extends State<AddHomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(color: Colors.blue, spreadRadius: 3),
-                              ],
-                            ),
-                            height: 25,
-                            child: FlatButton(
-                                child: Text("Semua"),
-                                onPressed: () {
-                                  setState(() {
-                                    filter = null;
-                                  });
-                                }),
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(color: Colors.blue, spreadRadius: 3),
-                              ],
-                            ),
-                            height: 25,
-                            child: FlatButton(
-                                child: Text("Nasi Goreng"),
-                                onPressed: () {
-                                  setState(() {
-                                    filter = "Nasi Goreng";
-                                  });
-                                }),
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(color: Colors.blue, spreadRadius: 3),
-                              ],
-                            ),
-                            height: 25,
-                            child: FlatButton(
-                                child: Text("Seblak"),
-                                onPressed: () {
-                                  setState(() {
-                                    filter = "Seblak";
-                                  });
-                                }),
-                          )
-                        ],
+                    Container(
+                      height: 50,
+                      child: StreamBuilder<QuerySnapshot>(
+                        stream: firestore
+                            .collection('jenis')
+                            .orderBy('jenis')
+                            .snapshots(),
+                        builder: (BuildContext context,
+                            AsyncSnapshot<QuerySnapshot> snapshot) {
+                          if (!snapshot.hasData) {
+                            return Center();
+                          }
+                          return ListView.builder(
+                            padding: EdgeInsets.all(8.0),
+                            itemCount: snapshot.data.documents.length,
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (BuildContext context, int index) {
+                              DocumentSnapshot document =
+                                  snapshot.data.documents[index];
+                              Map<String, dynamic> jns = document.data;
+                              return Container(
+                                margin: EdgeInsets.only(right: 12.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.grey, spreadRadius: 3),
+                                  ],
+                                ),
+                                height: 25,
+                                child: FlatButton(
+                                    child: Text(jns['jenis']),
+                                    onPressed: () {
+                                      String fil = jns['jenis'];
+                                      setState(() {
+                                        filJe = fil;
+                                      });
+                                    }),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    Container(
+                      height: 50,
+                      child: StreamBuilder<QuerySnapshot>(
+                        stream: firestore
+                            .collection('kategori')
+                            .orderBy('kategori')
+                            .snapshots(),
+                        builder: (BuildContext context,
+                            AsyncSnapshot<QuerySnapshot> snapshot) {
+                          if (!snapshot.hasData) {
+                            return Center();
+                          }
+                          return ListView.builder(
+                            padding: EdgeInsets.all(8.0),
+                            itemCount: snapshot.data.documents.length,
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (BuildContext context, int index) {
+                              DocumentSnapshot document =
+                                  snapshot.data.documents[index];
+                              Map<String, dynamic> kat = document.data;
+                              return Container(
+                                margin: EdgeInsets.only(right: 12.0),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.blue, spreadRadius: 3),
+                                  ],
+                                ),
+                                height: 25,
+                                child: FlatButton(
+                                    child: Text(kat['kategori']),
+                                    onPressed: () {
+                                      String fil = kat['kategori'];
+                                      setState(() {
+                                        filter = fil;
+                                      });
+                                    }),
+                              );
+                            },
+                          );
+                        },
                       ),
                     ),
                     Expanded(
                       child: StreamBuilder<QuerySnapshot>(
-                        stream: filter == null
-                            ? firestore
-                                .collection('resep')
-                                .where('userId', isEqualTo: userId)
-                                .snapshots()
+                        stream: filJe == null
+                            ? filter == null
+                                ? firestore
+                                    .collection('resep')
+                                    .where('userId', isEqualTo: userId)
+                                    .snapshots()
+                                : firestore
+                                    .collection('resep')
+                                    .where('userId', isEqualTo: userId)
+                                    .where('kategori', isEqualTo: filter)
+                                    .snapshots()
                             : firestore
                                 .collection('resep')
                                 .where('userId', isEqualTo: userId)
-                                .where('jenis', isEqualTo: filter)
+                                .where('jenis', isEqualTo: filJe)
                                 .snapshots(),
                         builder: (BuildContext context,
                             AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -140,14 +186,16 @@ class _AddHomeScreenState extends State<AddHomeScreen> {
                                 child: ListTile(
                                   title: Text(resep['nama']),
                                   subtitle: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: <Widget>[
                                       Text(
-                                        resep['keterangan'],
+                                        resep['jenis'],
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       Text(
-                                        resep['jenis'],
+                                        resep['kategori'],
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -190,15 +238,16 @@ class _AddHomeScreenState extends State<AddHomeScreen> {
                                           context,
                                           MaterialPageRoute(builder: (context) {
                                             return AddResScreen(
-                                              isEdit: true,
-                                              documentId: document.documentID,
-                                              nama: resep['nama'],
-                                              keterangan: resep['keterangan'],
-                                              image: resep['image'],
-                                              jenis: resep['jenis'],
-                                              listLike: resep['likes'],
-                                              countLikes: resep['countLikes']
-                                            );
+                                                isEdit: true,
+                                                documentId: document.documentID,
+                                                nama: resep['nama'],
+                                                keterangan: resep['keterangan'],
+                                                kategori: resep['kategori'],
+                                                image: resep['image'],
+                                                jenis: resep['jenis'],
+                                                listLike: resep['likes'],
+                                                countLikes:
+                                                    resep['countLikes']);
                                           }),
                                         );
                                         if (result != null && result) {

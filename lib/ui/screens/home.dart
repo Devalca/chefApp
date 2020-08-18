@@ -19,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final Firestore firestore = Firestore.instance;
   StateModel appState;
   String filter;
+  String filJe;
   bool _loadingVisible = false;
 
   @override
@@ -49,6 +50,15 @@ class _HomeScreenState extends State<HomeScreen> {
       return Scaffold(
         appBar: AppBar(title: Text("My Chef Home"), actions: <Widget>[
           IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                filter = null;
+                filJe = null;
+              });
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.book),
             onPressed: () {
               Navigator.push(context,
@@ -70,76 +80,114 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(color: Colors.blue, spreadRadius: 3),
-                            ],
-                          ),
-                          height: 25,
-                          child: FlatButton(
-                              child: Text("Semua"),
-                              onPressed: () {
-                                setState(() {
-                                  filter = null;
-                                });
-                              }),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(color: Colors.blue, spreadRadius: 3),
-                            ],
-                          ),
-                          height: 25,
-                          child: FlatButton(
-                              child: Text("Nasi Goreng"),
-                              onPressed: () {
-                                setState(() {
-                                  filter = "Nasi Goreng";
-                                });
-                              }),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(color: Colors.blue, spreadRadius: 3),
-                            ],
-                          ),
-                          height: 25,
-                          child: FlatButton(
-                              child: Text("Seblak"),
-                              onPressed: () {
-                                setState(() {
-                                  filter = "Seblak";
-                                });
-                              }),
-                        )
-                      ],
+                  Container(
+                    height: 50,
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: firestore
+                          .collection('jenis')
+                          .orderBy('jenis')
+                          .snapshots(),
+                      builder: (BuildContext context,
+                          AsyncSnapshot<QuerySnapshot> snapshot) {
+                        if (!snapshot.hasData) {
+                          return Center();
+                        }
+                        return ListView.builder(
+                          padding: EdgeInsets.all(8.0),
+                          itemCount: snapshot.data.documents.length,
+                          scrollDirection: Axis.horizontal,
+                          itemBuilder: (BuildContext context, int index) {
+                            DocumentSnapshot document =
+                                snapshot.data.documents[index];
+                            Map<String, dynamic> jns = document.data;
+                            return Container(
+                              margin: EdgeInsets.only(right: 12.0),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: Colors.grey, spreadRadius: 3),
+                                ],
+                              ),
+                              height: 25,
+                              child: FlatButton(
+                                  child: Text(jns['jenis']),
+                                  onPressed: () {
+                                    String fil = jns['jenis'];
+                                    setState(() {
+                                      filJe = fil;
+                                    });
+                                  }),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  Container(
+                    height: 50,
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: firestore
+                          .collection('kategori')
+                          .orderBy('kategori')
+                          .snapshots(),
+                      builder: (BuildContext context,
+                          AsyncSnapshot<QuerySnapshot> snapshot) {
+                        if (!snapshot.hasData) {
+                          return Center();
+                        }
+                        return ListView.builder(
+                          padding: EdgeInsets.all(8.0),
+                          itemCount: snapshot.data.documents.length,
+                          scrollDirection: Axis.horizontal,
+                          itemBuilder: (BuildContext context, int index) {
+                            DocumentSnapshot document =
+                                snapshot.data.documents[index];
+                            Map<String, dynamic> kat = document.data;
+                            return Container(
+                              margin: EdgeInsets.only(right: 12.0),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: Colors.blue, spreadRadius: 3),
+                                ],
+                              ),
+                              height: 25,
+                              child: FlatButton(
+                                  child: Text(kat['kategori']),
+                                  onPressed: () {
+                                    String fil = kat['kategori'];
+                                    setState(() {
+                                      filter = fil;
+                                    });
+                                  }),
+                            );
+                          },
+                        );
+                      },
                     ),
                   ),
                   Expanded(
                     child: StreamBuilder<QuerySnapshot>(
-                      stream: filter == null
+                      stream: filJe == null
+                          ? filter == null
                               ? firestore
                                   .collection('resep')
-                                  .orderBy("countLikes", descending: true)
+                                  .where('userId', isEqualTo: userId)
                                   .snapshots()
                               : firestore
                                   .collection('resep')
-                                  .where('jenis', isEqualTo: filter)
-                                  .snapshots(),
+                                  .where('userId', isEqualTo: userId)
+                                  .where('kategori', isEqualTo: filter)
+                                  .snapshots()
+                          : firestore
+                              .collection('resep')
+                              .where('kategori', isEqualTo: filter)
+                              .where('jenis', isEqualTo: filJe)
+                              .snapshots(),
                       builder: (BuildContext context,
                           AsyncSnapshot<QuerySnapshot> snapshot) {
                         if (!snapshot.hasData) {
@@ -166,6 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           documentId: document.documentID,
                                           nama: resep['nama'],
                                           keterangan: resep['keterangan'],
+                                          kategori: resep['kategori'],
                                           image: resep['image'],
                                           jenis: resep['jenis'],
                                         );
@@ -179,19 +228,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                             fontWeight: FontWeight.bold,
                                             fontSize: 20),
                                       ),
-                                      subtitle: listLike == null
-                                          ? Text(" ")
-                                          : Row(
-                                              children: <Widget>[
-                                                Text(
-                                                  listLike.length.toString(),
-                                                  style: TextStyle(
-                                                      color: Colors.red),
-                                                ),
-                                                Text(
-                                                    " Orang menyukai resep ini")
-                                              ],
-                                            ),
+                                      subtitle: Column(
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: <Widget>[
+                                              Text(
+                                                resep['jenis'],
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              Text(
+                                                resep['kategori'],
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                       isThreeLine: false,
                                       leading: Container(
                                           width: 60.0,
@@ -207,48 +263,71 @@ class _HomeScreenState extends State<HomeScreen> {
                                               : Text("data")),
                                       trailing: Column(
                                         children: <Widget>[
-                                          IconButton(
-                                              icon: Icon(
-                                                Icons.favorite,
-                                                size: 30,
-                                                color: Colors.red,
-                                              ),
-                                              onPressed: () {
-                                                DocumentReference documentTask =
-                                                    firestore.document(
-                                                        'resep/${document.documentID}');
-                                                if (!listLike
-                                                    .contains(userId)) {
-                                                  listLike.add(userId);
-                                                  firestore.runTransaction(
-                                                      (transaction) async {
-                                                    DocumentSnapshot task =
-                                                        await transaction
-                                                            .get(documentTask);
-                                                    if (task.exists) {
-                                                      await transaction.update(
-                                                        documentTask,
-                                                        <String, dynamic>{
-                                                          'userId':
-                                                              resep['userId'],
-                                                          'nama': resep['nama'],
-                                                          'jenis':
-                                                              resep['jenis'],
-                                                          'keterangan': resep[
-                                                              'keterangan'],
-                                                          'image':
-                                                              resep['image'],
-                                                          'likes': listLike,
-                                                          'countLikes':
-                                                              count.length + 1
-                                                        },
-                                                      );
+                                          Stack(
+                                            children: [
+                                              IconButton(
+                                                  icon: Icon(
+                                                    Icons.favorite,
+                                                    size: 40,
+                                                    color: Colors.red,
+                                                  ),
+                                                  onPressed: () {
+                                                    DocumentReference
+                                                        documentTask =
+                                                        firestore.document(
+                                                            'resep/${document.documentID}');
+                                                    if (!listLike
+                                                        .contains(userId)) {
+                                                      listLike.add(userId);
+                                                      firestore.runTransaction(
+                                                          (transaction) async {
+                                                        DocumentSnapshot task =
+                                                            await transaction.get(
+                                                                documentTask);
+                                                        if (task.exists) {
+                                                          await transaction
+                                                              .update(
+                                                            documentTask,
+                                                            <String, dynamic>{
+                                                              'userId': resep[
+                                                                  'userId'],
+                                                              'nama':
+                                                                  resep['nama'],
+                                                              'jenis': resep[
+                                                                  'jenis'],
+                                                              'keterangan': resep[
+                                                                  'keterangan'],
+                                                              'image': resep[
+                                                                  'image'],
+                                                              'likes': listLike,
+                                                              'countLikes':
+                                                                  count.length +
+                                                                      1
+                                                            },
+                                                          );
+                                                        }
+                                                      });
+                                                    } else {
+                                                      print("Gagal");
                                                     }
-                                                  });
-                                                } else {
-                                                  print("Gagal");
-                                                }
-                                              })
+                                                  }),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 20,
+                                                        horizontal: 25),
+                                                child: listLike == null
+                                                    ? Text(" ")
+                                                    : Text(
+                                                        listLike.length
+                                                            .toString(),
+                                                        style: TextStyle(
+                                                            fontSize: 10,
+                                                            color:
+                                                                Colors.white)),
+                                              )
+                                            ],
+                                          )
                                         ],
                                       )),
                                 ),
